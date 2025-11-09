@@ -1,4 +1,3 @@
-// api/telegram.js
 import fetch from "node-fetch";
 
 export default async function handler(req, res) {
@@ -7,7 +6,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ✅ Parse body manual
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const { token, method, params } = body || {};
 
@@ -16,15 +14,17 @@ export default async function handler(req, res) {
     }
 
     const apiUrl = `https://api.telegram.org/bot${token}/${method}`;
-
     const telegramRes = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: params ? JSON.stringify(params) : undefined,
     });
 
+    // Kirim balik *exactly* apa yang Telegram kirim
     const text = await telegramRes.text();
-    res.status(telegramRes.status).send(text);
+    res.status(telegramRes.status);
+    res.setHeader("Content-Type", "application/json");
+    res.send(text);
   } catch (err) {
     console.error("Relay error:", err);
     res.status(500).json({ error: err.message || "Internal Server Error" });

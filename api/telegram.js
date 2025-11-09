@@ -6,22 +6,27 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  const { token, method, params } = req.body;
-  if (!token || !method) {
-    return res.status(400).json({ error: "token & method required" });
-  }
-
   try {
-    const url = `https://api.telegram.org/bot${token}/${method}`;
-    const telegramRes = await fetch(url, {
+    // ✅ Parse body manual
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    const { token, method, params } = body || {};
+
+    if (!token || !method) {
+      return res.status(400).json({ error: "Missing token or method" });
+    }
+
+    const apiUrl = `https://api.telegram.org/bot${token}/${method}`;
+
+    const telegramRes = await fetch(apiUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: params ? JSON.stringify(params) : undefined,
     });
 
-    const data = await telegramRes.text();
-    res.status(telegramRes.status).send(data);
+    const text = await telegramRes.text();
+    res.status(telegramRes.status).send(text);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Relay error:", err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 }
